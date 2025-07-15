@@ -10,10 +10,11 @@ const Participants = ({ participants }) => {
                         className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
                     >
                         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center">
-                            {participant.identity?.charAt(0).toUpperCase() || 'U'}
+                            {participant.name?.charAt(0).toUpperCase() || 'U'}
                         </div>
                         <span className="text-sm font-medium text-gray-700 truncate">
-                            {participant.identity || 'Участник'}
+                            {participant.name || 'Участник'}
+                            <div className='text-xs text-gray-1000 opacity-30'>{participant.identity}</div>
                         </span>
                         <div className="ml-auto flex items-center gap-2">
                             {participant.isMicrophoneEnabled ? (

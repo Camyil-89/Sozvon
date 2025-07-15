@@ -3,9 +3,14 @@ import { RoomService } from './room.service';
 import { RoomController } from './room.controller';
 import { AuthService } from 'src/auth/auth.service';
 import { AuthModule } from 'src/auth/auth.module';
+import { Room } from 'livekit-server-sdk';
+import { MongooseModule } from '@nestjs/mongoose';
+import { RoomSchema } from './schemas/room.schemas';
 
 @Module({
-    imports: [AuthModule],
+    imports: [AuthModule,
+        MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }], 'roomDB'),
+    ],
     controllers: [RoomController],
     providers: [RoomService],
 })

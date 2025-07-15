@@ -25,7 +25,6 @@ const Conference = ({ room, availableDevices }) => {
 
     const toggleMute = useCallback(async () => {
         try {
-            console.log("asdasdasdasdas");
             if (isMuted) {
                 await room.localParticipant.setMicrophoneEnabled(true);
             } else {

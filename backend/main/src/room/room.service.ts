@@ -1,6 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { time } from 'console';
 import { AccessToken, Room, RoomServiceClient } from 'livekit-server-sdk';
-
+import { Model } from 'mongoose';
+const crypto = require('crypto');
 @Injectable()
 export class RoomService {
     private roomProvider: RoomServiceClient;
@@ -8,7 +11,7 @@ export class RoomService {
     private apiKey: string = "8f67bc68b4404bb425cfe45730f41bb7";
     private apiSecret: string = "5150a1728eab011c70822e4655da907a";
 
-    constructor() {
+    constructor(@InjectModel(Room.name, 'roomDB') private roomModel: Model<Room>,) {
         this.roomProvider = new RoomServiceClient(
             "http://192.168.56.1:7880", //configService.get('LIVEKIT_HOST'),
             this.apiKey,
@@ -16,12 +19,21 @@ export class RoomService {
         );
     }
 
-    async createRoom(name: string): Promise<void> {
+    generateUniqueString(length = 64) {
+        return (Date.now() + crypto.randomBytes(length).toString('hex')).slice(0, length);
+    }
+
+    async createRoom(name: string, user) {
+        const uid = this.generateUniqueString();
+        if ((await this.roomModel.findOne({ name }).exec()))
+            throw new UnauthorizedException("Room with name existed");
+        const room = await this.roomModel.create({ name: name, usersAdmin: [user.UID], UID: uid })
         await this.roomProvider.createRoom({
-            name,
-            emptyTimeout: 60 * 60, // 1 hour
+            name: uid,
+            emptyTimeout: 30, // 1 hour
             maxParticipants: 20,
         });
+        return room;
     }
 
 
@@ -58,6 +70,5 @@ export class RoomService {
         return await this.roomProvider.listParticipants(roomName);
     }
 
-    async mute() {
-    }
+
 }

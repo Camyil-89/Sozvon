@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from '../../api/axios';
 import { useAuth } from '../../hooks/useAuth';
 import Header from '../../components/header';
@@ -8,7 +8,13 @@ function ProfilePage() {
     const { user, logout } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
     const [apiError, setApiError] = useState(null);
+    const [successMessage, setSuccessMessage] = useState('');
     const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+    const [profileData, setProfileData] = useState({
+        name: '',
+        imageProfile: ''
+    });
+
     const [passwordData, setPasswordData] = useState({
         newPassword: '',
         confirmPassword: '',
@@ -21,20 +27,28 @@ function ProfilePage() {
         confirmPassword: ''
     });
 
+    // Загрузка данных профиля при монтировании
+    useEffect(() => {
+        if (user?.profile) {
+            setProfileData({
+                name: user.profile.name || '',
+                imageProfile: user.profile.imageProfile || ''
+            });
+        }
+    }, [user]);
+
     const validatePasswordForm = () => {
         const newErrors = {
             newPassword: !passwordData.newPassword ? 'Введите новый пароль' :
                 passwordData.newPassword.length < 6 ? 'Пароль должен содержать минимум 6 символов' : '',
             confirmPassword: passwordData.newPassword !== passwordData.confirmPassword ? 'Пароли не совпадают' : ''
         };
-
         setPasswordErrors(newErrors);
         return !Object.values(newErrors).some(error => error !== '');
     };
 
     const handlePasswordChange = async () => {
         if (!validatePasswordForm()) return;
-
         try {
             setIsLoading(true);
             await axios.post('/api/auth/change-password', {
@@ -57,6 +71,26 @@ function ProfilePage() {
         }
     };
 
+    const handleProfileUpdate = async () => {
+        try {
+            setIsLoading(true);
+            setApiError(null);
+            setSuccessMessage('');
+
+            const response = await axios.put('/api/profile', {
+                name: profileData.name,
+                imageProfile: profileData.imageProfile
+            });
+
+            setSuccessMessage('Профиль успешно обновлён');
+        } catch (err) {
+            setApiError('Не удалось обновить профиль');
+            console.error('Ошибка при обновлении профиля:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col">
             <Header />
@@ -70,19 +104,61 @@ function ProfilePage() {
                         </div>
                     )}
 
+                    {successMessage && (
+                        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded">
+                            {successMessage}
+                        </div>
+                    )}
+
                     <div className="space-y-6">
                         <div>
                             <label className="block text-gray-700 text-sm font-bold mb-1">Email</label>
                             <p className="px-3 py-2 bg-gray-100 rounded text-gray-800">{user?.email}</p>
                         </div>
 
+                        <div>
+                            <label className="block text-gray-700 text-sm font-bold mb-1">Имя</label>
+                            <input
+                                type="text"
+                                value={profileData.name}
+                                onChange={(e) =>
+                                    setProfileData({
+                                        ...profileData,
+                                        name: e.target.value
+                                    })
+                                }
+                                className="w-full px-3 py-2 border rounded"
+                            />
+                        </div>
+
+                        {/* Пока изображение не реализуем */}
+                        <div>
+                            <label className="block text-gray-700 text-sm font-bold mb-1">Фото профиля</label>
+                            <input
+                                type="text"
+                                value={profileData.imageProfile}
+                                placeholder="URL изображения"
+                                disabled // временно отключено
+                                className="w-full px-3 py-2 bg-gray-100 border rounded cursor-not-allowed"
+                            />
+                        </div>
+
                         <div className="flex flex-col space-y-3 pt-2">
+                            <button
+                                onClick={handleProfileUpdate}
+                                disabled={isLoading}
+                                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 w-full disabled:opacity-50"
+                            >
+                                {isLoading ? 'Сохранение...' : 'Сохранить профиль'}
+                            </button>
+
                             <button
                                 onClick={() => setPasswordModalOpen(true)}
                                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
                             >
                                 Изменить пароль
                             </button>
+
                             <button
                                 onClick={logout}
                                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 w-full"
@@ -100,13 +176,11 @@ function ProfilePage() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">Изменение пароля</h2>
-
                         {passwordData.passwordChanged && (
                             <div className="mb-4 p-3 bg-green-100 text-green-700 rounded border border-green-200">
                                 Пароль успешно изменен
                             </div>
                         )}
-
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-1">Новый пароль</label>
@@ -143,7 +217,6 @@ function ProfilePage() {
                                 </div>
                                 {passwordErrors.newPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.newPassword}</p>}
                             </div>
-
                             <div>
                                 <label className="block text-gray-700 text-sm font-bold mb-1">Подтвердите новый пароль</label>
                                 <div className="relative">
@@ -179,7 +252,6 @@ function ProfilePage() {
                                 </div>
                                 {passwordErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{passwordErrors.confirmPassword}</p>}
                             </div>
-
                             <div className="flex space-x-3 pt-2">
                                 <button
                                     onClick={handlePasswordChange}

@@ -52,7 +52,7 @@ export class AuthService implements OnModuleInit {
             throw new UnauthorizedException("Invalid password");
         }
         const token = jwt.sign({ sub: foundUser._id, email: foundUser.email, roles: foundUser.roles }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
-        return { token, user: { email: dto.email, roles: foundUser.roles } };
+        return { token, user: foundUser };
     }
 
     async getMe(req: Request) {
@@ -61,7 +61,7 @@ export class AuthService implements OnModuleInit {
         const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
         const user = await this.userModel.findById(payload.sub);
         if (!user) throw new UnauthorizedException("User not found");
-        return { email: user.email, roles: user.roles };
+        return user;
     }
 
 
@@ -92,7 +92,6 @@ export class AuthService implements OnModuleInit {
 
         return {
             users: await this.userModel.find(filter)
-                .select('email roles createdAt updatedAt')
                 .skip(skip)
                 .limit(limit)
                 .exec(), count: await clone_query.countDocuments()
@@ -100,7 +99,7 @@ export class AuthService implements OnModuleInit {
     }
 
     async getUserByEmail(email: string) {
-        const user = await this.userModel.findOne({ email }).select('email roles createdAt updatedAt');
+        const user = await this.userModel.findOne({ email });
         if (!user) {
             throw new UnauthorizedException("User not found");
         }
@@ -123,6 +122,6 @@ export class AuthService implements OnModuleInit {
         }
         const updatedUser = await this.userModel.findByIdAndUpdate(user._id, { $set: { roles: dto.roles } }, { new: true });
         if (!updatedUser) throw new UnauthorizedException();
-        return { email: updatedUser.email, roles: updatedUser.roles };
+        return updatedUser;
     }
 }

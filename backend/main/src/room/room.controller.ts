@@ -19,12 +19,9 @@ export class RoomController {
 
     @Post()
     @UseGuards(JwtAuthGuard)
-    async createRoom(@Body() dto: CreateRoomDto) {
-        await this.roomService.createRoom(dto.name);
-        return {
-            message: 'Room created successfully',
-            roomName: dto.name
-        };
+    async createRoom(@Body() dto: CreateRoomDto, @Req() req: Request) {
+        const user = await this.authService.getMe(req);
+        return await this.roomService.createRoom(dto.name, user);
     }
 
 
@@ -38,7 +35,7 @@ export class RoomController {
     @UseGuards(JwtAuthGuard)
     async joinRoom(@Param("roomName") id: string, @Req() req: Request) {
         const user = await this.authService.getMe(req);
-        return await this.roomService.generateToken(id, user.email, user.email);
+        return await this.roomService.generateToken(id, user.UID, user.profile.name);
     }
 
 
