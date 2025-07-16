@@ -48,6 +48,12 @@ export class Room extends Document {
         required: false
     })
     passwordRoom: string
+
+    @Prop({
+        required: false,
+        default: 2
+    })
+    maxUsers: number
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

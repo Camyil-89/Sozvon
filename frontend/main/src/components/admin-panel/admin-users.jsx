@@ -58,6 +58,7 @@ const AdminUsersTable = () => {
 			});
 
 			setUsers(sortedUsers);
+			console.log(sortedUsers);
 			setTotalCount(response.data.count);
 		} catch (err) {
 			handleApiError(err, 'Ошибка при загрузке пользователей');
@@ -268,6 +269,16 @@ const AdminUsersTable = () => {
 						</th>
 						<th
 							className="py-3 px-4 text-left cursor-pointer hover:bg-gray-200"
+							onClick={() => requestSort('_id')}
+						>
+							<div className="flex items-center">
+								UID
+								{getSortIcon('_id')}
+							</div>
+						</th>
+
+						<th
+							className="py-3 px-4 text-left cursor-pointer hover:bg-gray-200"
 							onClick={() => requestSort('createdAt')}
 						>
 							<div className="flex items-center">
@@ -301,6 +312,7 @@ const AdminUsersTable = () => {
 						users.map((user) => (
 							<tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50">
 								<td className="py-3 px-4">{user.email}</td>
+								<td className="py-3 px-4 font-mono text-sm text-gray-700">{user?.UID}</td>
 								<td className="py-3 px-4">{new Date(user.createdAt).toLocaleString()}</td>
 								<td className="py-3 px-4">{new Date(user.updatedAt).toLocaleString()}</td>
 								<td className="py-3 px-4">
@@ -372,9 +384,10 @@ const AdminUsersTable = () => {
 						))
 					) : (
 						<tr>
-							<td colSpan="5" className="py-4 text-center text-gray-500">
+							<td colSpan="6" className="py-4 text-center text-gray-500">
 								{searchTerm ? 'Пользователи не найдены' : 'Нет пользователей'}
 							</td>
+
 						</tr>
 					)}
 				</tbody>

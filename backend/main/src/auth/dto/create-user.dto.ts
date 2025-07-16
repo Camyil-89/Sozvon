@@ -12,4 +12,5 @@ export class CreateUserDto {
     @IsString({ message: 'Пароль должен быть строкой' })
     @Length(6, 128, { message: 'Пароль должен быть от 6 до 128 символов' })
     password: string;
+
 }

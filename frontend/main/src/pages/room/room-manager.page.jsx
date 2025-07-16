@@ -44,7 +44,7 @@ function RoomManagerPage() {
     const handleJoinRoom = (room) => {
         console.log("Попытка войти в комнату:", room.name);
         // Здесь будет логика входа в комнату
-        navigate(`/room/${room.name}`)
+        navigate(`/room/${room.UID}`)
     };
 
     return (
@@ -87,12 +87,12 @@ function RoomManagerPage() {
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">{room.name}</span>
                                             <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
-                                                {room.numParticipants} участников
+                                                участников
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center mt-2">
                                             <span className="text-xs text-gray-500">
-                                                Макс: {room.maxParticipants}
+                                                <div className='text-xs text-gray-1000 opacity-30'>{room.UID.substring(0, 32)}</div>
                                             </span>
                                             <button
                                                 onClick={() => handleJoinRoom(room)}

@@ -25,20 +25,27 @@ export class RoomService {
 
     async createRoom(name: string, user) {
         const uid = this.generateUniqueString();
-        if ((await this.roomModel.findOne({ name }).exec()))
-            throw new UnauthorizedException("Room with name existed");
         const room = await this.roomModel.create({ name: name, usersAdmin: [user.UID], UID: uid })
-        await this.roomProvider.createRoom({
-            name: uid,
-            emptyTimeout: 30, // 1 hour
-            maxParticipants: 20,
-        });
         return room;
     }
 
+    async createRoomLiveKit(room) {
+        try {
+            await this.roomProvider.createRoom({
+                name: room.UID,
+                emptyTimeout: 0, // 1 hour
+                maxParticipants: room.maxUsers,
+            });
+        } catch { }
+    }
 
-    async listRooms(): Promise<Room[]> {
+    async listRoomsLiveKit() {
         return await this.roomProvider.listRooms();
+    }
+
+
+    async listRooms() {
+        return await this.roomModel.find({}).exec()
     }
     async deleteRoom(roomName: string) {
         await this.roomProvider.deleteRoom(roomName);
@@ -46,6 +53,8 @@ export class RoomService {
     }
 
     async generateToken(roomName: string, userId: string, username: string) {
+        const room: any = await this.roomModel.findOne({ UID: roomName }).exec()
+        await this.createRoomLiveKit(room);
         const at = new AccessToken(
             this.apiKey,
             this.apiSecret,

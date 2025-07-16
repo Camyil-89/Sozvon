@@ -17,6 +17,12 @@ export class RoomController {
         return await this.roomService.listRooms();
     }
 
+    @Get("/livekit")
+    @UseGuards(JwtAuthGuard)
+    async getRoomsLiveKit() {
+        return await this.roomService.listRoomsLiveKit();
+    }
+
     @Post()
     @UseGuards(JwtAuthGuard)
     async createRoom(@Body() dto: CreateRoomDto, @Req() req: Request) {

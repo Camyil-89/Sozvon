@@ -3,12 +3,6 @@ import { Document, Model } from 'mongoose';
 import { UserRole } from './roles.enum';
 import { Length } from 'class-validator';
 
-const defaultUID = (
-    Math.floor(1000000000000000 + Math.random() * 99999999999999)
-        .toString()
-        .substring(0, 12)
-);
-
 
 @Schema({
     toJSON: {
@@ -32,6 +26,11 @@ export class Profile extends Document {
         maxlength: 128
     })
     imageProfile: string
+
+    @Prop({
+        required: false
+    })
+    friends: [string]
 }
 
 @Schema({
@@ -40,6 +39,7 @@ export class Profile extends Document {
         transform: function (doc, ret: any) {
             if ('__v' in ret) delete ret.__v;
             if ('_id' in ret) delete ret._id;
+            if ('password' in ret) delete ret.password;
             return ret;
         },
     },
@@ -55,12 +55,10 @@ export class User extends Document {
     email: string;
 
     @Prop({
-        required: true,
         unique: true,
         lowercase: true,
         index: true,
         maxlength: 12,
-        default: defaultUID,
     })
     UID: string
 
@@ -93,10 +91,12 @@ UserSchema.pre('save', async function (next) {
     let isUnique = false;
 
     while (!isUnique) {
-        const uid = defaultUID;
+        const uid = Math.floor(1000000000000000 + Math.random() * 99999999999999)
+            .toString()
+            .substring(0, 12);
         try {
             const exists = await model.findOne({ UID: this.UID });
-            if (!exists) isUnique = true;
+            if (!exists && this.UID != "") isUnique = true;
             else
                 this.UID = uid;
         } catch (err) {

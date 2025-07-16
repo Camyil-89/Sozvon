@@ -11,6 +11,7 @@ import AdminPanelPage from './pages/admin-panel/admin-panel.page';
 import ProfilePage from './pages/profile/profile.page';
 import RoomPage from './pages/room/room.page';
 import RoomManagerPage from './pages/room/room-manager.page';
+import FriendPage from './pages/friends/friends.page';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="/access-denied" element={<AccessDeniedPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/friend" element={<FriendPage />} />
           <Route path="/room" element={<RoomManagerPage />} />
           <Route path="/room/:id" element={<RoomPage />} />
         </Route>

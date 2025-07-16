@@ -18,6 +18,11 @@ function Header() {
                         Создать комнату
                     </Link>
                 </div>
+                <div className="hidden md:flex space-x-6">
+                    <Link to="/friend" className="hover:text-gray-300">
+                        Друзья
+                    </Link>
+                </div>
                 <div className="flex items-center space-x-4">
                     {isAuthenticated ? (
                         <Link to="/profile" className="text-sm font-medium hover:text-gray-300">

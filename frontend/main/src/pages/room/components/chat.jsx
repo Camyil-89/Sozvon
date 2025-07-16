@@ -47,13 +47,14 @@ const Chat = ({ localParticipant }) => {
     }, [message]);
 
     const renderMessage = (msg) => {
-        const sender = typeof msg.from === 'string' ? msg.from : msg?.from?.identity;
-        const isMe = sender === localParticipant.identity;
-        const senderName = isMe ? 'Вы' : sender?.split('@')[0] || 'Участник';
+        const sender = typeof msg.from === 'string' ? msg.from : msg?.from?.name;
+        const isMe = msg?.from?.identity === localParticipant.identity;
+        const senderName = isMe ? 'Вы' : sender || 'Участник';
         const time = new Date(msg.timestamp).toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit',
         });
+        console.log(msg?.from);
         return (
             <div
                 key={`${msg.timestamp}-${sender}`}
@@ -109,7 +110,7 @@ const Chat = ({ localParticipant }) => {
                 <div
                     ref={messagesContainerRef}
                     className="flex-1 overflow-y-auto p-4 min-h-0 max-h-full h-full"
-                    style={{ maxHeight: 'calc(100vh - 400px)' }}
+                    style={{ maxHeight: 'calc(100vh - 450px)' }}
                 >
                     {chatMessages.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-gray-400">
