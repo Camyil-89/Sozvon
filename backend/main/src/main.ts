@@ -4,7 +4,6 @@ import { ValidationPipe } from '@nestjs/common';
 import * as cookieParser from 'cookie-parser';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { GlobalExceptionFilter } from './filters/global-exception.filter';
-
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
@@ -13,6 +12,16 @@ async function bootstrap() {
 	httpServer.setTimeout(60 * 1000);
 	// @ts-ignore - Allow larger headers
 	httpServer.headersTimeout = 65000;
+	app.use("/api/rooms/livekit", (req, res, next) => {
+		let data = '';
+		req.on('data', chunk => {
+			data += chunk;
+		});
+		req.on('end', () => {
+			(req as any).rawBody = data;
+			next();
+		});
+	});
 	app.useGlobalFilters(new GlobalExceptionFilter());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());

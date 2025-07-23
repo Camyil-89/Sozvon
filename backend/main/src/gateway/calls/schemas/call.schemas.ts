@@ -7,6 +7,13 @@ export enum statusCall {
     nothing = "nothing"
 }
 
+export enum statusUserCall {
+    accept = "accept",
+    reject = "reject",
+    wait = "wait",
+    leave = "leave",
+}
+
 @Schema({
     timestamps: true,
     toJSON: {
@@ -37,12 +44,12 @@ export class Call extends Document {
         required: false,
         type: {
             is: { type: Boolean, default: false },
-            lastTime: { type: Date, default: null }
+            lastTime: { type: Date, default: new Date() }
         }
     })
     online: {
         is: boolean,
-        lastTime: Date | null,
+        lastTime: Date,
     }
 
     @Prop({
@@ -61,14 +68,22 @@ export class Call extends Document {
     @Prop({
         type: {
             isAdmin: { type: Boolean },
-            roomUID: { type: String }
+            roomUID: { type: String },
+            users: {
+                type: [{
+                    UID: { type: String },
+                    status: { type: String, enum: Object.values(statusUserCall) },
+                    time: { type: Date }
+                }]
+            }
         },
         required: false
     })
     room?: {
         isAdmin: boolean;
         roomUID: string;
-    } | null
+        users: { UID: string, status: statusUserCall, time: Date }[] | null
+    } | null;
 }
 
 export const CallSchema = SchemaFactory.createForClass(Call);

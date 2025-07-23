@@ -68,8 +68,7 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const user = await this.authService.getMeWS(client)
             if (!user)
                 throw new UnauthorizedException("User not found");
-            await this.callsService.joinRoom(user.UID, payload.roomUID);
-            console.log("join_room", client.id, payload, user);
+            await this.callsService.joinRoom(user.UID);
 
         } catch (e) {
             console.log(e);
@@ -99,7 +98,6 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             if (!user)
                 throw new UnauthorizedException("User not found");
-            console.log("call_state", user.UID)
             await this.callsService.sendState(user.UID, client.id);
 
         } catch (e) {
@@ -116,7 +114,6 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (!user)
                 throw new UnauthorizedException("User not found");
             await this.callsService.leaveRoom(user.UID);
-            console.log("leave_room", client.id, payload, user);
 
         } catch (e) {
             console.log(e);
@@ -131,7 +128,6 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             if (!user)
                 throw new UnauthorizedException("User not found");
             await this.callsService.callRejected(user.UID);
-            console.log("call_rejected", client.id, payload, user);
 
         } catch (e) {
             console.log(e);

@@ -16,13 +16,13 @@ const Calls = () => {
 
     useEffect(() => {
 
-
     }, [location]);
 
     useEffect(() => {
         const fetch = async () => {
             const user = await profile.getProfileByUID(incomingCall.callerUID)
             setIncomingCallUser(user);
+
         }
         console.log(incomingCall)
         if (!incomingCall)
@@ -32,29 +32,33 @@ const Calls = () => {
 
 
     useEffect(() => {
-        if (lastState.status == "incoming_call" && (new Date() - new Date(lastState.incomingCall.time)) < 60000 && incomingCall == null) {
-            setIncomingCall(lastState.incomingCall.call)
-            console.log("asdasdas");
-            setTimeout(() => {
-                setIncomingCall(null)
-            }, new Date() - new Date(lastState.incomingCall.time))
+        if (location.pathname.includes("/room/") && lastState.status != "in_room") {
+            navigate("/")
         }
-
-        else if (lastState.status == "in_room") {
-            console.log(lastState, `/room/${lastState?.room?.UID}`);
-            navigate(`/room/${lastState?.room?.UID}`)
+        if (lastState.status == "incoming_call") {
+            setIncomingCall({ callerUID: lastState.incomingCall.userUID, roomUID: lastState.room.roomUID });
+        }
+        else {
+            setIncomingCall(null);
         }
         console.log(lastState);
     }, [lastState]);
 
     useEffect(() => {
-        console.log("Start WS")
+        console.log("Start WS");
+
+        // Создаем сокет один раз
         const newSocket = io(SOCKET_URL, {
-            transports: ['websocket']
+            transports: ['websocket'],
+            reconnection: true,           // Включаем автоматическое переподключение
+            reconnectionAttempts: Infinity, // Бесконечные попытки переподключения
+            reconnectionDelay: 1000,       // Задержка между попытками
+            reconnectionDelayMax: 5000,    // Максимальная задержка
+            randomizationFactor: 0.5,      // Фактор рандомизации
+            timeout: 3000,                // Таймаут подключения
         });
 
         setSocket(newSocket);
-
 
         newSocket.on("call_state", async (data) => {
             setlastState(data);
@@ -62,7 +66,16 @@ const Calls = () => {
 
         newSocket.on('connect', () => {
             console.log('Connected with ID:', newSocket.id);
-            newSocket.emit('call_state')
+            newSocket.emit('call_state');
+        });
+
+        newSocket.on('disconnect', (reason) => {
+            console.log('Disconnected:', reason);
+            // Socket.IO автоматически попытается переподключиться
+        });
+
+        newSocket.on('connect_error', (err) => {
+            console.error('Connection error:', err.message);
         });
 
         // Приходит событие звонка
@@ -77,35 +90,33 @@ const Calls = () => {
             setIncomingCall(null);
         });
 
-        newSocket.on('connect_error', (err) => {
-            console.error('Connection error:', err.message);
-            console.error('Description:', err.description);
-            console.error('Context:', err.context);
+        newSocket.on('call_rejected', (err) => {
+            // Используем newSocket вместо socket, так как socket может быть null
+            newSocket.emit('cancel_call', { callerId: incomingCall?.callerId });
+            navigate(`/`);
         });
 
-        newSocket.on('call_rejected', (err) => {
-            socket?.emit('cancel_call', { callerId: incomingCall.callerId });
-            navigate(`/`)
-        });
 
         const loop_fetch = () => {
-            newSocket.emit('call_state')
+            if (newSocket.connected) {
+                newSocket.emit('call_state');
+            }
             setTimeout(() => {
                 loop_fetch();
             }, 5000);
-        }
+        };
+
         loop_fetch();
-    }, []);
+    }, []); // Пустой массив зависимостей - запуск только при монтировании
 
     const handleAccept = () => {
         setIncomingCall(null);
-        navigate(`/room/${incomingCall?.data?.roomUID}`)
-        socket?.emit('join_room', { roomUID: incomingCall?.data?.roomUID });
+        navigate(`/room/${incomingCall?.roomUID}`)
+        socket?.emit('join_room');
     };
 
     const handleReject = () => {
         socket?.emit('call_rejected');
-        console.log("ASDASD");
         setIncomingCall(null);
     };
 
@@ -119,17 +130,18 @@ const Calls = () => {
                             <span className="font-semibold"></span> {incomingCallUser?.profile?.name}
                         </p>
                         <div className="flex justify-center gap-4">
-                            <button
-                                onClick={handleReject}
-                                className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded transition"
-                            >
-                                Отклонить
-                            </button>
+
                             <button
                                 onClick={handleAccept}
                                 className="bg-green-500 hover:bg-green-600 text-white font-medium px-4 py-2 rounded transition"
                             >
                                 Принять
+                            </button>
+                            <button
+                                onClick={handleReject}
+                                className="bg-red-500 hover:bg-red-600 text-white font-medium px-4 py-2 rounded transition"
+                            >
+                                Отклонить
                             </button>
                         </div>
                     </div>

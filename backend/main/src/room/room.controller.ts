@@ -1,10 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
 import { AuthService } from 'src/auth/auth.service';
 import { Response, Request } from 'express';
-
+import { Headers, BadRequestException, UnauthorizedException, RawBodyRequest } from '@nestjs/common';
 @Controller("rooms")
 export class RoomController {
     constructor(private readonly roomService: RoomService,
@@ -62,5 +62,21 @@ export class RoomController {
     @UseGuards(JwtAuthGuard)
     async getParticipants(@Param("roomName") roomName: string) {
         return await this.roomService.listParticipants(roomName);
+    }
+
+    @Get("/:roomName/add/:userId")
+    @UseGuards(JwtAuthGuard)
+    async addUserToRoom(@Param("roomName") roomName: string, @Param("userId") userId: string, @Req() req: Request) {
+        const user = await this.authService.getMe(req);
+        return await this.roomService.addUserToRoom(roomName, userId, user.UID)
+    }
+
+    @Post('/livekit/webhook')
+    async webhook(@Req() req: Request, @Headers('Authorization') authHeader: string) {
+        // Предполагается, что RoomService инжектится через конструктор
+        // constructor(private readonly roomService: RoomService) {}
+
+        // Передаем req и authHeader в сервис
+        return this.roomService.webhook(req, authHeader);
     }
 }

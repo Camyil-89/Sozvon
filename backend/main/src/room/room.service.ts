@@ -1,11 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, RawBodyRequest, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { time } from 'console';
-import { AccessToken, Room, RoomServiceClient } from 'livekit-server-sdk';
+import { AccessToken, Room, RoomServiceClient, WebhookReceiver } from 'livekit-server-sdk';
 import { Model } from 'mongoose';
 import { json } from 'stream/consumers';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { CallsService } from 'src/gateway/calls/calls.service';
+import { Response, Request } from 'express';
 const crypto = require('crypto');
 @Injectable()
 export class RoomService {
@@ -13,7 +14,7 @@ export class RoomService {
 
     private apiKey: string = "8f67bc68b4404bb425cfe45730f41bb7";
     private apiSecret: string = "5150a1728eab011c70822e4655da907a";
-
+    private receiver; WebhookReceiver;
     constructor(@InjectModel(Room.name, 'roomDB') private roomModel: Model<Room>,
         private readonly callsService: CallsService,) {
         this.roomProvider = new RoomServiceClient(
@@ -21,7 +22,7 @@ export class RoomService {
             this.apiKey,
             this.apiSecret
         );
-
+        this.receiver = new WebhookReceiver(this.apiKey, this.apiSecret);
         callsService.setRoomService(this);
     }
 
@@ -29,11 +30,45 @@ export class RoomService {
         return (Date.now() + crypto.randomBytes(length).toString('hex')).slice(0, length);
     }
 
+    async webhook(req: Request, authHeader: string) { // Принимаем req и authHeader
+        // Получаем тело запроса как строку
+        const body = (req as any).rawBody || JSON.stringify(req.body);
+        if (!body) {
+            return;
+        }
+        const event = await this.receiver.receive(body, authHeader);
+
+        if (event.event == "participant_joined") {
+            console.log(event.room.name, event.participant.identity);
+        }
+        else if (event.event == "participant_left") {
+            console.log(event.room.name, event.participant.identity);
+        }
+
+        console.log(event)
+    }
+
+
     async createRoom(name: string, user) {
         const uid = this.generateUniqueString();
         const room = await this.roomModel.create({ name: name, usersAdmin: [user.UID], UID: uid })
         return room;
     }
+
+    async getMetadataRoomName(name: string) {
+        const room = (await this.listRoomsLiveKit()).find(r => r.name == name);
+
+        if (!room)
+            return null;
+
+        const metadata = JSON.parse(room.metadata) as CreateRoomDto;
+        return metadata;
+    }
+
+    async setMetadataRoomName(name: string, data: any) {
+        return await this.roomProvider.updateRoomMetadata(name, JSON.stringify(data));
+    }
+
 
     async callRoom(dto: CreateRoomDto, user) {
         const uid = this.generateUniqueString();
@@ -100,6 +135,9 @@ export class RoomService {
         if (room.metadata.acceptUsers.includes(userId) == false)
             throw new UnauthorizedException("User not permited in room");
 
+        if (!(await this.callsService.inRoomUser(userId)))
+            throw new UnauthorizedException("User not in room");
+
         const at = new AccessToken(
             this.apiKey,
             this.apiSecret,
@@ -115,7 +153,6 @@ export class RoomService {
             canPublish: true,
             canSubscribe: true,
         });
-
         return await at.toJwt();
     }
 
@@ -129,4 +166,17 @@ export class RoomService {
         await this.callsService.leaveRoom(userId);
     }
 
+
+    async addUserToRoom(roomName: string, userIdadd: string, userUID: string) {
+        console.log(roomName, userIdadd, userUID)
+        const metadata = await this.getMetadataRoomName(roomName);
+        if (metadata == null)
+            throw new UnauthorizedException("No found room");
+        if (!metadata.acceptUsers.includes(userIdadd))
+            metadata.acceptUsers.push(userIdadd);
+        if (await this.setMetadataRoomName(roomName, metadata) == null)
+            throw new UnauthorizedException("Not set metadata");
+        this.callsService.sendCallUser(userIdadd, userUID, roomName);
+        return metadata;
+    }
 }

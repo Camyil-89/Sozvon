@@ -32,9 +32,7 @@ export class ProfileService {
 
 
     async getUserByUID(uid: string) {
-        console.log(uid);
         const user = await this.userModel.findOne({ UID: uid }).select(["profile", "UID"]).exec();
-        console.log(user);
         return user;
     }
 }
