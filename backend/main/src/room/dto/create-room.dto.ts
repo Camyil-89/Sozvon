@@ -1,12 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ArrayMinSize, IsArray, IsNotEmpty, isString, IsString, Length, ValidateIf } from "class-validator";
 
-enum TypeRoom {
+export enum TypeRoom {
     Publish = "publish",
     Private = "private"
 }
 
-enum StatusRoom {
+export enum StatusRoom {
     Temprorary = "temporary",
     Constant = "constant",
 }

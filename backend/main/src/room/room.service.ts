@@ -7,7 +7,10 @@ import { json } from 'stream/consumers';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { CallsService } from 'src/gateway/calls/calls.service';
 import { Response, Request } from 'express';
+import { metadataRoom } from './dto/metadata-room.dto';
 const crypto = require('crypto');
+
+
 @Injectable()
 export class RoomService {
     private roomProvider: RoomServiceClient;
@@ -39,13 +42,12 @@ export class RoomService {
         const event = await this.receiver.receive(body, authHeader);
 
         if (event.event == "participant_joined") {
-            console.log(event.room.name, event.participant.identity);
+            const metadata = JSON.parse(event.room.metadata) as metadataRoom;
+            this.callsService.joinRoom(event.participant.identity, metadata.userAdmin.UID)
         }
         else if (event.event == "participant_left") {
-            console.log(event.room.name, event.participant.identity);
         }
 
-        console.log(event)
     }
 
 
@@ -61,7 +63,7 @@ export class RoomService {
         if (!room)
             return null;
 
-        const metadata = JSON.parse(room.metadata) as CreateRoomDto;
+        const metadata = JSON.parse(room.metadata) as metadataRoom;
         return metadata;
     }
 
@@ -75,7 +77,7 @@ export class RoomService {
         if (!dto.acceptUsers.includes(user.UID)) {
             dto.acceptUsers.push(user.UID);
         }
-        await this.createRoomCallLiveKit(uid, dto);
+        await this.createRoomCallLiveKit(uid, user.UID, dto);
         dto.acceptUsers.forEach(au => {
             if (au === user.UID) {
                 return;
@@ -85,8 +87,14 @@ export class RoomService {
         return { UID: uid };
     }
 
-    async createRoomCallLiveKit(uid, data: any = null) {
-        let metadata = data != null ? JSON.stringify(data) : '';
+    async createRoomCallLiveKit(uid, admin_UID, data: any = null,) {
+        const metadata_room = new metadataRoom();
+        metadata_room.userAdmin = { UID: admin_UID }
+        const combinedObj = {
+            ...metadata_room,
+            ...data  // если нужно добавить дополнительные поля из data
+        };
+        let metadata = data != null ? JSON.stringify(combinedObj) : '';
         await this.roomProvider.createRoom({
             name: uid,
             emptyTimeout: 300, // 1 hour
@@ -135,8 +143,8 @@ export class RoomService {
         if (room.metadata.acceptUsers.includes(userId) == false)
             throw new UnauthorizedException("User not permited in room");
 
-        if (!(await this.callsService.inRoomUser(userId)))
-            throw new UnauthorizedException("User not in room");
+        //if (!(await this.callsService.inRoomUser(userId)))
+        //    throw new UnauthorizedException("User not in room");
 
         const at = new AccessToken(
             this.apiKey,
@@ -163,7 +171,7 @@ export class RoomService {
 
 
     async leaveRoom(roomName: string, userId: string) {
-        await this.callsService.leaveRoom(userId);
+        //await this.callsService.leaveRoom(userId);
     }
 
 

@@ -60,20 +60,20 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.disconnect(true);
         }
     }
-    @UseGuards(JwtAuthGuard)
-    @SubscribeMessage('join_room')
-    async handleJoinRoom(client: Socket, payload) {
-        try {
-
-            const user = await this.authService.getMeWS(client)
-            if (!user)
-                throw new UnauthorizedException("User not found");
-            await this.callsService.joinRoom(user.UID);
-
-        } catch (e) {
-            console.log(e);
-        }
-    }
+    //@UseGuards(JwtAuthGuard)
+    //@SubscribeMessage('join_room')
+    //async handleJoinRoom(client: Socket, payload) {
+    //    try {
+    //
+    //        const user = await this.authService.getMeWS(client)
+    //        if (!user)
+    //            throw new UnauthorizedException("User not found");
+    //        await this.callsService.joinRoom(user.UID);
+    //
+    //    } catch (e) {
+    //        console.log(e);
+    //    }
+    //}
     @UseGuards(JwtAuthGuard)
     @SubscribeMessage('leave_room')
     async handleLeaveRoom(client: Socket, payload) {

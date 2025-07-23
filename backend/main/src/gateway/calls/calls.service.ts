@@ -55,7 +55,6 @@ export class CallsService {
         else {
             userCall.online = { is: true, lastTime: new Date() };
             await userCall.save();
-            await this.updateCallStatus(userCall);
         }
     }
 
@@ -84,16 +83,13 @@ export class CallsService {
             return CallsStatus.ErrorReadBase;
         }
 
-        console.log("asdasd")
         if (new Date().getTime() - new Date(user_call.online.lastTime).getTime() > 15000) {
             return CallsStatus.UserOffline;
         }
 
-        console.log("asdasd")
         if (user_call.status != statusCall.nothing) {
             return CallsStatus.userIsIncomingCall;
         }
-        console.log("asdasd312")
 
         user_call.status = statusCall.incomingCall;
         user_call.incomingCall = {
@@ -140,33 +136,26 @@ export class CallsService {
         return call?.status == statusCall.inRoom;
     }
 
-    async joinRoom(userId: string) {
-        const call = await this.callModel.findOne({ userUID: userId }).exec();
-        if (!call || !call.incomingCall)
-            return;
-
-        const call_from = await this.callModel.findOne({ userUID: call.incomingCall.userUID }).exec();
-
-        if (!call_from || !call_from.room || !call_from?.room.users) {
-            return;
-        }
-        const u_call = call_from.room.users.find(u => u.UID == userId);
-        if (!u_call)
-            return;
-
-        u_call.status = statusUserCall.accept;
-
-        call.status = statusCall.inRoom;
-        call.save();
-        call_from.save();
-    }
-
-    async leaveRoom(userId: string) {
-        //await this.redisService.set(`call_${userId}`, Object.assign(new StatusCallRedis(), {
-        //    userUID: userId,
-        //    status: statusCall.nothing
-        //}))
-    }
+    //async joinRoom(userId: string) {
+    //    //const call = await this.callModel.findOne({ userUID: userId }).exec();
+    //    //if (!call || !call.incomingCall)
+    //    //    return;
+    //    //
+    //    //const call_from = await this.callModel.findOne({ userUID: call.incomingCall.userUID }).exec();
+    //    //
+    //    //if (!call_from || !call_from.room || !call_from?.room.users) {
+    //    //    return;
+    //    //}
+    //    //const u_call = call_from.room.users.find(u => u.UID == userId);
+    //    //if (!u_call)
+    //    //    return;
+    //    //
+    //    //u_call.status = statusUserCall.accept;
+    //    //
+    //    //call.status = statusCall.inRoom;
+    //    //call.save();
+    //    //call_from.save();
+    //}
 
     async sendState(usedId: string, socketId: string) {
         let user = await this.callModel.findOne({ userUID: usedId }).exec();
@@ -181,7 +170,6 @@ export class CallsService {
 
 
     async callRejected(userId) {
-        console.log(userId);
         const call = await this.callModel.findOne({ userUID: userId }).exec();
         if (!call || !call.incomingCall)
             return;
@@ -218,7 +206,8 @@ export class CallsService {
     }
 
 
-    async updateCallStatus(call: any) {
+
+    async call_incommingCall(call: any): Promise<any> {
         if (call.status == statusCall.incomingCall && call.incomingCall != null) {
             if (new Date().getTime() - new Date(call.incomingCall.time).getTime() > this.TIMEOUT_CALL) {
                 call.status = statusCall.nothing;
@@ -234,8 +223,11 @@ export class CallsService {
                 }
             }
         }
+        return call;
+    }
 
-        else if (call.status == statusCall.inRoom && call.room && call.room.users) {
+    async call_inRoom(call: any): Promise<any> {
+        if (call.status == statusCall.inRoom && call.room && call.room.users) {
             // Проверяем, все ли пользователи отклонили вызов
             const rejectCount = call.room.users.filter(u => u.status == statusUserCall.reject || u.status == statusUserCall.leave).length;
             if (rejectCount > 0 && rejectCount == call.room.users.length) {
@@ -275,6 +267,7 @@ export class CallsService {
             })
 
         }
+
         if (call.status == statusCall.inRoom && call.room) {
             const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
             if (users.length == 1 && call.incomingCall) {
@@ -301,6 +294,83 @@ export class CallsService {
                 call.room = null;
             }
         }
+        return call;
+    }
+
+    async joinRoom(userUID: string, userUIDAdmin: string) {
+        console.log(userUID, userUIDAdmin);
+        if (userUID == userUIDAdmin)
+            return;
+
+        const call = await this.callModel.findOne({ userUID: userUID }).exec();
+        if (!call)
+            return;
+
+        call.status = statusCall.inRoom;
+        await call.save();
+
+        const call_from = await this.callModel.findOne({ userUID: userUIDAdmin }).exec();
+
+        if (!call_from || !call_from.room || !call_from?.room.users) {
+            return;
+        }
+        const u_call = call_from.room.users.find(u => u.UID == userUID);
+        if (!u_call)
+            return;
+
+        u_call.status = statusUserCall.accept;
+        await call_from.save();
+    }
+    async leaveRoom(userUID: string, userUIDAdmin: string) {
+        console.log(userUID);
+        const call = await this.callModel.findOne({ userUID: userUID }).exec();
+        if (!call)
+            return;
+
+        call.status = statusCall.nothing;
+        await call.save();
+
+        if (userUID)
+            return;
+        const call_from = await this.callModel.findOne({ userUID: userUIDAdmin }).exec();
+
+        if (!call_from || !call_from.room || !call_from?.room.users) {
+            return;
+        }
+
+        const u_call = call_from.room.users.find(u => u.UID == userUID);
+        if (!u_call)
+            return;
+
+        u_call.status = statusUserCall.leave;
+    }
+
+    async updateCallStatus(call: any) {
+        if (call.status == statusCall.nothing)
+            return call;
+
+
+        if (call.status == statusCall.inRoom && call.room) {
+            const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+            if (!users.includes(call.userUID)) {
+                call.status = statusCall.nothing;
+                call.incomingCall = null;
+                call.room = null;
+            }
+        }
+
+        if (call.status == statusCall.inRoom && call.room && call.room.isAdmin) {
+            const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+            call.room.users.forEach(user => {
+                if (!users.includes(user.UID) && user.status == statusUserCall.accept) {
+                    user.status = statusUserCall.leave
+                }
+            })
+        }
+
+
+        //call = await this.call_incommingCall(call);
+        //call = await this.call_inRoom(call);
         return call;
     }
 
