@@ -12,6 +12,8 @@ import ProfilePage from './pages/profile/profile.page';
 import RoomPage from './pages/room/room.page';
 import RoomManagerPage from './pages/room/room-manager.page';
 import FriendPage from './pages/friends/friends.page';
+import Calls from './components/gateway/calls';
+import MainBackground from './components/mainBackground';
 
 function App() {
   return (
@@ -24,21 +26,22 @@ function App() {
 function AppRoutes() {
   return (
     <AuthProvider>
+      <Calls></Calls>
       <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/access-denied" element={<AccessDeniedPage />} />
+        <Route path="/" element={<MainBackground><MainPage /></MainBackground>} />
+        <Route path="/login" element={<MainBackground><LoginPage /></MainBackground>} />
+        <Route path="/register" element={<MainBackground><RegisterPage /></MainBackground>} />
+        <Route path="/access-denied" element={<MainBackground><AccessDeniedPage /></MainBackground>} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/friend" element={<FriendPage />} />
-          <Route path="/room" element={<RoomManagerPage />} />
-          <Route path="/room/:id" element={<RoomPage />} />
+          <Route path="/profile" element={<MainBackground><ProfilePage /></MainBackground>} />
+          <Route path="/friend" element={<MainBackground><FriendPage /></MainBackground>} />
+          <Route path="/room" element={<MainBackground><RoomManagerPage /></MainBackground>} />
+          <Route path="/room/:id" element={<MainBackground><RoomPage /></MainBackground>} />
         </Route>
         <Route
           element={<ProtectedRoute allowedRoles={['admin']} unauthorizedRedirectPath="/access-denied" />}
         >
-          <Route path="/admin/users" element={<AdminPanelPage />} />
+          <Route path="/admin/users" element={<MainBackground><AdminPanelPage /></MainBackground>} />
         </Route>
       </Routes>
     </AuthProvider>

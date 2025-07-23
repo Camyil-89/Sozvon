@@ -25,6 +25,7 @@ import { Avatar } from '../../components/room/Avatar';
 import { Input } from '../../components/room/Input';
 import { Track } from 'livekit-client';
 import RoomLayout from './components/roomLayout';
+import { useBackround } from '../../components/mainBackground';
 
 
 function RoomPage() {
@@ -39,6 +40,8 @@ function RoomPage() {
         canScreenShare: true
     });
 
+    const { setHeaderVisibility } = useBackround();
+    setHeaderVisibility(false);
     useEffect(() => {
         if (!roomId || !user) return;
         const fetchRoomData = async () => {
@@ -74,23 +77,20 @@ function RoomPage() {
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex flex-col bg-gray-50">
-                <Header />
+            <div className="min-h-screen flex flex-co">
                 <main className="flex-grow container mx-auto px-4 py-8 pt-24 flex items-center justify-center">
                     <div className="flex flex-col items-center gap-4">
                         <Spinner className="h-12 w-12" />
                         <p className="text-gray-600">Подключение к комнате...</p>
                     </div>
                 </main>
-                <Footer />
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="min-h-screen flex flex-col bg-gray-50">
-                <Header />
+            <div className="min-h-screen flex flex-col">
                 <main className="flex-grow container mx-auto px-4 py-8 pt-24 flex items-center justify-center">
                     <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full text-center">
                         <h3 className="text-red-600 font-medium text-lg mb-2">Ошибка</h3>
@@ -100,20 +100,18 @@ function RoomPage() {
                         </Button>
                     </div>
                 </main>
-                <Footer />
             </div>
         );
     }
 
     return (
-        <div className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden pt-24">
+        <div className="h-screen w-screen flex flex-col overflow-hidden px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 py-12 md:py-20">
             <style>{`
                     .lk-control-bar {
                         display: none !important;
                     }
                 `}</style>
-            <Header />
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-hidden mx-auto w-[75%]">
                 {token && (
                     <LiveKitRoom
                         token={token}
@@ -135,7 +133,6 @@ function RoomPage() {
                     </LiveKitRoom>
                 )}
             </div>
-            <Footer />
         </div>
     );
 }

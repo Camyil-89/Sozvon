@@ -18,9 +18,19 @@ export class ProfileController {
     constructor(private readonly profileService: ProfileService,
         private readonly authService: AuthService
     ) { }
+
+
     @Put()
+    @UseGuards(JwtAuthGuard)
     async updateProfile(@Body() dto: UpdateProfileDTO, @Req() req: Request) {
         const user = await this.authService.getMe(req);
         return { profile: await this.profileService.updateProfile(dto, user) };
+    }
+
+
+    @Get(":userUID")
+    @UseGuards(JwtAuthGuard)
+    async getProfile(@Param("userUID") UID: string) {
+        return await this.profileService.getUserByUID(UID);
     }
 }

@@ -5,10 +5,12 @@ import { User } from './schemas/user.schemas';
 import { Model } from 'mongoose';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcryptjs';
+import * as cookie from 'cookie';
 import * as jwt from 'jsonwebtoken';
 import { Response, Request } from 'express';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { allUsersQueryDto } from './dto/allusers.dto';
+import { Server, Socket } from 'socket.io';
 import { ChangeRoleDto } from './dto/chenge-role.dto';
 
 @Injectable()
@@ -57,12 +59,22 @@ export class AuthService implements OnModuleInit {
 
     async getMe(req: Request) {
         const token = req.cookies?.['jwt'];
+        return await this._getMe(token);
+    }
+
+    async getMeWS(client: Socket) {
+        const cookies = cookie.parse(client.client.request.headers.cookie);
+        return await this._getMe(cookies?.jwt);
+    }
+
+    async _getMe(token) {
         if (!token) throw new UnauthorizedException("Token expires");
         const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
         const user = await this.userModel.findById(payload.sub);
         if (!user) throw new UnauthorizedException("User not found");
         return user;
     }
+
 
 
     async changePassword(dto: ChangePasswordDto, req: Request) {

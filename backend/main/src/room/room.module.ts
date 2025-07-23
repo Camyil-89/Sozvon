@@ -6,12 +6,14 @@ import { AuthModule } from 'src/auth/auth.module';
 import { Room } from 'livekit-server-sdk';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RoomSchema } from './schemas/room.schemas';
+import { CallsModule } from 'src/gateway/calls/calls.module';
 
 @Module({
     imports: [AuthModule,
         MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }], 'roomDB'),
+        CallsModule
     ],
     controllers: [RoomController],
-    providers: [RoomService],
+    providers: [RoomService]
 })
 export class RoomModule { }

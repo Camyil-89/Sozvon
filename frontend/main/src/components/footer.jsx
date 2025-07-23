@@ -3,6 +3,31 @@ import React from 'react';
 function Footer() {
     return (
         <div></div>
+        //  <footer className="py-12 bg-[#092b44]">
+        //         <div className="px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20">
+        //             {/* Добавлена обертка с большими боковыми отступами */}
+        //             <div className="px-[200px]"> {/* Можно адаптивно: px-4 sm:px-6 md:px-[200px] */}
+        //                 <div className="max-w-7xl mx-auto">
+        //                     <div className="flex flex-col md:flex-row justify-between items-center">
+        //                         <div className="flex items-center space-x-2 mb-6 md:mb-0">
+        //                             <div className="w-8 h-8 rounded-full bg-[#256e91] flex items-center justify-center">
+        //                                 <span className="font-bold">S</span>
+        //                             </div>
+        //                             <span className="text-xl font-bold">Sozvon</span>
+        //                         </div>
+        //                         <div className="flex flex-wrap justify-center space-x-6 text-[#9e9d8a]">
+        //                             <a href="#" className="hover:text-white transition mb-2 md:mb-0">Политика конфиденциальности</a>
+        //                             <a href="#" className="hover:text-white transition mb-2 md:mb-0">Условия использования</a>
+        //                             <a href="#" className="hover:text-white transition mb-2 md:mb-0">Контакты</a>
+        //                         </div>
+        //                     </div>
+        //                     <div className="border-t border-[#1e4c61] mt-8 pt-8 text-center text-[#9e9d8a]">
+        //                         <p>© 2023 Sozvon. Все права защищены.</p>
+        //                     </div>
+        //                 </div>
+        //             </div> {/* Закрытие обертки px-[200px] */}
+        //         </div>
+        //     </footer>
         /* <footer className="bg-gray-800 text-white py-8 mt-auto">
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

@@ -48,8 +48,7 @@ function RoomManagerPage() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50">
-            <Header />
+        <div className="min-h-screen flex flex-col">
             <main className="flex-grow container mx-auto px-4 py-8 pt-24">
                 <div className="flex flex-col md:flex-row gap-6">
                     {/* Левая панель с комнатами */}
@@ -134,7 +133,6 @@ function RoomManagerPage() {
                     </div>
                 </div>
             </main>
-            <Footer />
         </div>
     );
 }

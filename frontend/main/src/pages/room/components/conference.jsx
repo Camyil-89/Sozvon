@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Mic, MicOff, Video, VideoOff, Share2, PhoneOff } from 'lucide-react';
 import { VideoConference } from '@livekit/components-react';
+import axios from '../../../api/axios';
 
 const Conference = ({ room, availableDevices }) => {
     const [isMuted, setIsMuted] = useState(false);
@@ -68,14 +69,16 @@ const Conference = ({ room, availableDevices }) => {
 
     const handleLeave = useCallback(() => {
         room.disconnect();
+        axios.get(`/api/rooms/${room.name}/leave`)
         window.location.href = '/';
     }, [room]);
 
     return (
-        <>
+        <div className='h-full w-full border-black border rounded-tl-xl rounded-bl-xl relative'>
             <div className="flex-1 min-h-0 overflow-hidden">
                 <VideoConference className="h-full w-full object-cover" />
             </div>
+            <div className="bg-gray-400 absolute top-0 left-0 w-full h-full opacity-25 z-[-1000] rounded-tl-xl rounded-bl-xl"></div>
             <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 flex gap-4">
                 {availableDevices.hasMicrophone && (
                     <button
@@ -112,7 +115,7 @@ const Conference = ({ room, availableDevices }) => {
                     <PhoneOff size={20} className="text-white" />
                 </button>
             </div>
-        </>
+        </div>
     );
 };
 

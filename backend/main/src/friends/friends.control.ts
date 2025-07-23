@@ -5,7 +5,7 @@ import { Response, Request } from 'express';
 import { FriendsService } from './friends.service';
 
 @Controller("friends")
-export class FriendsCntroller {
+export class FriendsCotroller {
     constructor(private readonly friendsService: FriendsService,
         private readonly authService: AuthService
     ) { }

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import Header from '../../components/header';
-import Footer from '../../components/footer';
 import axios from '../../api/axios';
+import { useNavigate } from 'react-router-dom';
+import Calls from '../../api/calls';
+import FormCard from '../../components/formCard';
 
 const FriendPage = () => {
     const [friends, setFriends] = useState([]);
@@ -9,6 +10,7 @@ const FriendPage = () => {
     const [activeTab, setActiveTab] = useState('friends'); // friends or all
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     // Fetch friends and all users
     useEffect(() => {
@@ -32,7 +34,17 @@ const FriendPage = () => {
         };
 
         fetchData();
-    }, []);
+    }, [friends, allUsers]);
+
+    const callUser = async (uid) => {
+        try {
+            const call = await Calls.callUserByUID(uid);
+            console.log(call);
+            navigate(`/room/${call.UID}`)
+        } catch (err) {
+            console.error('Ошибка вызова:', err);
+        }
+    }
 
     // Add a friend
     const addFriend = async (id) => {
@@ -67,24 +79,37 @@ const FriendPage = () => {
                         friends.map((friend) => (
                             <li
                                 key={friend.UID}
-                                className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50 transition"
+                                className="flex justify-between items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200"
                             >
                                 <div>
-                                    <p className="font-semibold text-gray-800">
-                                        {friend.profile.name}
+                                    <p className="font-semibold text-white">
+                                        {friend.profile?.name || 'Пользователь'}
                                     </p>
-                                    <p className="text-sm text-gray-500">UID: {friend.UID}</p>
+                                    <p className="text-sm text-indigo-200">UID: {friend.UID}</p>
                                 </div>
-                                <button
-                                    onClick={() => removeFriend(friend.UID)}
-                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md transition"
-                                >
-                                    Удалить
-                                </button>
+                                <div className='space-x-3'>
+                                    <button
+                                        onClick={() => callUser(friend.UID)}
+                                        className="bg-green-500/80 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
+                                    >
+                                        Позвонить
+                                    </button>
+                                    <button
+                                        onClick={() => removeFriend(friend.UID)}
+                                        className="bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
+                                    >
+                                        Удалить
+                                    </button>
+                                </div>
                             </li>
                         ))
                     ) : (
-                        <p className="text-gray-500 text-center py-4">У вас пока нет друзей.</p>
+                        <div className="text-center py-8">
+                            <svg className="mx-auto h-12 w-12 text-indigo-300/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            <p className="mt-4 text-indigo-200">У вас пока нет друзей</p>
+                        </div>
                     )}
                 </ul>
             );
@@ -96,67 +121,122 @@ const FriendPage = () => {
                     allUsers.map((user) => (
                         <li
                             key={user.UID}
-                            className="flex justify-between items-center p-4 border rounded-lg hover:bg-gray-50 transition"
+                            className="flex justify-between items-center p-4 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 hover:bg-white/20 transition-all duration-200"
                         >
                             <div>
-                                <p className="font-semibold text-gray-800">
-                                    {user.profile.name}
+                                <p className="font-semibold text-white">
+                                    {user.profile?.name || 'Пользователь'}
                                 </p>
-                                <p className="text-sm text-gray-500">UID: {user.UID}</p>
+                                <p className="text-sm text-indigo-200">UID: {user.UID}</p>
                             </div>
-                            {user.isFriend ? (
+                            <div className='space-x-3'>
                                 <button
-                                    onClick={() => removeFriend(user.UID)}
-                                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded-md transition"
+                                    onClick={() => callUser(user.UID)}
+                                    className="bg-green-500/80 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
                                 >
-                                    Удалить
+                                    Позвонить
                                 </button>
-                            ) : (
-                                <button
-                                    onClick={() => addFriend(user.UID)}
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-1 rounded-md transition"
-                                >
-                                    Добавить
-                                </button>
-                            )}
+                                {user.isFriend ? (
+                                    <button
+                                        onClick={() => removeFriend(user.UID)}
+                                        className="bg-red-500/80 hover:bg-red-500 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
+                                    >
+                                        Удалить
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={() => addFriend(user.UID)}
+                                        className="bg-indigo-500/80 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-all duration-200 transform hover:scale-105 hover:shadow-lg"
+                                    >
+                                        Добавить
+                                    </button>
+                                )}
+                            </div>
                         </li>
                     ))
                 ) : (
-                    <p className="text-gray-500 text-center py-4">Нет доступных пользователей.</p>
+                    <div className="text-center py-8">
+                        <svg className="mx-auto h-12 w-12 text-indigo-300/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="mt-4 text-indigo-200">Нет доступных пользователей</p>
+                    </div>
                 )}
             </ul>
         );
     };
 
-    if (loading)
-        return <p className="text-center mt-10 text-gray-600">Загрузка...</p>;
-    if (error)
-        return <p className="text-red-500 text-center mt-10">{error}</p>;
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="flex flex-col items-center">
+                    <svg className="animate-spin h-12 w-12 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p className="mt-4 text-indigo-200">Загрузка друзей...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="max-w-md w-full">
+                    <FormCard
+                        title="Ошибка"
+                        subtitle="Произошла ошибка при загрузке данных"
+                        error={error}
+                        icon={
+                            <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        }
+                    >
+                        <div className="text-center mt-6">
+                            <button
+                                onClick={() => window.location.reload()}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+                            >
+                                Повторить попытку
+                            </button>
+                        </div>
+                    </FormCard>
+                </div>
+            </div>
+        );
+    }
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-100">
-            <Header />
-
-            <main className="flex flex-1 container mx-auto px-4 pt-24 pb-10">
-                <div className="w-full max-w-4xl mx-auto bg-white shadow-lg rounded-xl p-6">
-                    <h1 className="text-3xl font-bold mb-6 text-gray-800">Друзья</h1>
+        <div className="h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+            <div className="w-full h-full max-w-4xl">
+                <FormCard className="text-white h-full">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-white mb-2">
+                            Друзья
+                        </h1>
+                        <p className="text-indigo-200">
+                            Управляйте своими контактами и звонками
+                        </p>
+                    </div>
 
                     {/* Tabs */}
-                    <div className="flex border-b mb-6">
+                    <div className="flex border-b border-white/20 mb-8">
                         <button
                             onClick={() => setActiveTab('friends')}
-                            className={`py-2 px-4 font-medium ${activeTab === 'friends'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                            className={`py-3 px-6 font-medium text-sm rounded-t-lg transition-all duration-200 ${activeTab === 'friends'
+                                ? 'text-white bg-white/20 border-b-2 border-indigo-400'
+                                : 'text-indigo-200 hover:text-white hover:bg-white/10'
                                 }`}
                         >
                             Мои друзья
                         </button>
                         <button
                             onClick={() => setActiveTab('all')}
-                            className={`py-2 px-4 font-medium ${activeTab === 'all'
-                                ? 'text-blue-600 border-b-2 border-blue-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                            className={`py-3 px-6 font-medium text-sm rounded-t-lg transition-all duration-200 ${activeTab === 'all'
+                                ? 'text-white bg-white/20 border-b-2 border-indigo-400'
+                                : 'text-indigo-200 hover:text-white hover:bg-white/10'
                                 }`}
                         >
                             Все пользователи
@@ -165,10 +245,8 @@ const FriendPage = () => {
 
                     {/* Content */}
                     {renderContent()}
-                </div>
-            </main>
-
-            <Footer />
+                </FormCard>
+            </div>
         </div>
     );
 };

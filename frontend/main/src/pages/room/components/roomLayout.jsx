@@ -11,7 +11,7 @@ const RoomLayout = ({ roomId, user, availableDevices }) => {
     const participants = useParticipants();
 
     return (
-        <div className="flex h-screen w-screen bg-gray-50">
+        <div className="flex h-full w-full p-16">
             {/* Main Conference Area - Left Side */}
             <div className="flex flex-col flex-1 overflow-hidden h-full">
                 {/* Conference Area */}
@@ -24,7 +24,7 @@ const RoomLayout = ({ roomId, user, availableDevices }) => {
             </div>
 
             {/* Sidebar - Right Side */}
-            <div className="w-[300px] bg-white border-l shadow-lg flex flex-col h-screen">
+            <div className="w-[300px] bg-white border-l shadow-lg flex flex-col h-full">
                 {/* Participants List */}
                 <div className="p-4 border-b flex-shrink-0">
                     <h2 className="text-lg font-semibold text-gray-800 mb-3">Участники</h2>

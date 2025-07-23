@@ -7,6 +7,12 @@ import { GlobalExceptionFilter } from './filters/global-exception.filter';
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
+
+	// Patch underlying HTTP server
+	const httpServer = app.getHttpServer();
+	httpServer.setTimeout(60 * 1000);
+	// @ts-ignore - Allow larger headers
+	httpServer.headersTimeout = 65000;
 	app.useGlobalFilters(new GlobalExceptionFilter());
 	app.setGlobalPrefix('api');
 	app.use(cookieParser());
