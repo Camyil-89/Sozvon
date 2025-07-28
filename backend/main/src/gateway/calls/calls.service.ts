@@ -19,11 +19,12 @@ export enum CallsStatus {
 @Injectable()
 export class CallsService {
     constructor(
-        @InjectModel(Call.name, 'callsDB') private callModel: Model<Call>
+        @InjectModel(Call.name, 'callsDB') private callModel: Model<Call>,
+        private readonly redisSevice: RedisService
     ) {
 
     }
-    private userSockets = new Map<string, string[]>(); // socketId → userId
+    private userSockets = new Map<string, string[]>(); // userid → soscketid
     private server: Server;
     private roomService: RoomService;
     private readonly TIMEOUT_CALL = 60000;
@@ -63,12 +64,12 @@ export class CallsService {
         user = user?.filter(id => id !== socketID);
         if (user?.length == 0) {
             this.userSockets.delete(userID);
-            const call = await this.callModel.findOne({ userUID: userID }).exec();
-            if (!call)
-                return;
-            call.online.is = false;
-            call.online.lastTime = new Date();
-            call.save();
+            //const call = await this.callModel.findOne({ userUID: userID }).exec();
+            //if (!call)
+            //    return;
+            //call.online.is = false;
+            //call.online.lastTime = new Date();
+            //call.save();
         }
         else {
             this.userSockets.set(userID, user);
@@ -78,11 +79,9 @@ export class CallsService {
     async sendCallUser(userId: string, from_uid, room_uid): Promise<CallsStatus> {
         const user_call = await this.callModel.findOne({ userUID: userId }).exec();
         const user_from_call = await this.callModel.findOne({ userUID: from_uid }).exec();
-
         if (!user_call || !user_from_call) {
             return CallsStatus.ErrorReadBase;
         }
-
         if (new Date().getTime() - new Date(user_call.online.lastTime).getTime() > 15000) {
             return CallsStatus.UserOffline;
         }
@@ -156,6 +155,24 @@ export class CallsService {
     //    //call.save();
     //    //call_from.save();
     //}
+
+    async updateState(userId: string) {
+        const socketId = this.userSockets.get(userId);
+        if (!socketId)
+            return;
+
+        let user = await this.callModel.findOne({ userUID: userId }).exec();
+        user = await this.updateCallStatus(user);
+        if (!user) {
+            return;
+        }
+        user.online.lastTime = new Date();
+        await user.save();
+
+        for (let id of socketId) {
+            this.server.to(id).emit("call_state", user);
+        }
+    }
 
     async sendState(usedId: string, socketId: string) {
         let user = await this.callModel.findOne({ userUID: usedId }).exec();
@@ -284,9 +301,7 @@ export class CallsService {
             if (!users.includes(call.userUID)) {
 
                 if (call.room.isAdmin && !users.includes(call.userUID)) {
-                    try {
-                        await this.roomService.deleteRoom(call.room.roomUID);
-                    } catch { }
+                    await this.roomService.deleteRoom(call.room.roomUID);
                 }
 
                 call.status = statusCall.nothing;
@@ -321,6 +336,7 @@ export class CallsService {
         u_call.status = statusUserCall.accept;
         await call_from.save();
     }
+
     async leaveRoom(userUID: string, userUIDAdmin: string) {
         console.log(userUID);
         const call = await this.callModel.findOne({ userUID: userUID }).exec();
@@ -330,7 +346,7 @@ export class CallsService {
         call.status = statusCall.nothing;
         await call.save();
 
-        if (userUID)
+        if (userUID == userUIDAdmin)
             return;
         const call_from = await this.callModel.findOne({ userUID: userUIDAdmin }).exec();
 
@@ -343,30 +359,76 @@ export class CallsService {
             return;
 
         u_call.status = statusUserCall.leave;
+        await call_from.save();
     }
 
     async updateCallStatus(call: any) {
-        if (call.status == statusCall.nothing)
+        if (call.status == statusCall.nothing) {
+            call.room = null;
+            call.incomingCall = null;
             return call;
+        }
 
-
-        if (call.status == statusCall.inRoom && call.room) {
-            const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
-            if (!users.includes(call.userUID)) {
+        if (call.status == statusCall.incomingCall && call.incomingCall) {
+            if (new Date().getTime() - new Date(call.incomingCall.time).getTime() > this.TIMEOUT_CALL) {
                 call.status = statusCall.nothing;
-                call.incomingCall = null;
-                call.room = null;
+            }
+            if (call.incomingCall) {
+                const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+                if (!users.includes(call.incomingCall.userUID)) {
+                    call.status = statusCall.nothing;
+                }
             }
         }
-
-        if (call.status == statusCall.inRoom && call.room && call.room.isAdmin) {
-            const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
-            call.room.users.forEach(user => {
-                if (!users.includes(user.UID) && user.status == statusUserCall.accept) {
-                    user.status = statusUserCall.leave
+        if (call.status == statusCall.inRoom) {
+            if (call.room && call.room.isAdmin) {
+                const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+                call.room.users.forEach(user => {
+                    if (!users.includes(user.UID) && user.status == statusUserCall.accept) {
+                        user.status = statusUserCall.leave
+                    }
+                    else if (new Date().getTime() - new Date(user.time).getTime() > this.TIMEOUT_CALL && user.status == statusUserCall.wait) {
+                        user.status = statusUserCall.reject;
+                    }
+                });
+                const wait_users = call.room.users.filter((u) => u.status == statusUserCall.accept || u.status == statusUserCall.wait);
+                if (wait_users.length == 0) {
+                    call.status = statusCall.nothing;
                 }
-            })
+            }
         }
+        //if (call.status == statusCall.incomingCall) {
+        //    if (call.incomingCall) {
+        //        const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+        //        if (!users.includes(call.incomingCall.userUID)) {
+        //            call.status = statusCall.nothing;
+        //            call.incomingCall = null;
+        //            call.room = null;
+        //        }
+        //    }
+        //    else {
+        //        call.status = statusCall.nothing;
+        //        call.incomingCall = null;
+        //        call.room = null;
+        //    }
+        //}
+        //
+        //if (call.status == statusCall.inRoom) {
+        //    if (call.room) {
+        //        const users = Array.from(await this.roomService.listParticipants(call.room.roomUID)).map((p: any) => p.identity);
+        //        if (!users.includes(call.userUID)) {
+        //            call.status = statusCall.nothing;
+        //            call.incomingCall = null;
+        //            call.room = null;
+        //        }
+        //    }
+        //    else {
+        //        call.status = statusCall.nothing;
+        //        call.incomingCall = null;
+        //        call.room = null;
+        //    }
+        //}
+        //
 
 
         //call = await this.call_incommingCall(call);

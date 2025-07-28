@@ -35,19 +35,34 @@ export class RoomService {
 
     async webhook(req: Request, authHeader: string) { // Принимаем req и authHeader
         // Получаем тело запроса как строку
-        const body = (req as any).rawBody || JSON.stringify(req.body);
-        if (!body) {
-            return;
-        }
-        const event = await this.receiver.receive(body, authHeader);
+        try {
+            const body = (req as any).rawBody || JSON.stringify(req.body);
+            if (!body) {
+                return;
+            }
+            const event = await this.receiver.receive(body, authHeader);
 
-        if (event.event == "participant_joined") {
-            const metadata = JSON.parse(event.room.metadata) as metadataRoom;
-            this.callsService.joinRoom(event.participant.identity, metadata.userAdmin.UID)
-        }
-        else if (event.event == "participant_left") {
-        }
+            if (event.event == "participant_joined") {
+                const metadata = JSON.parse(event.room.metadata) as metadataRoom;
+                this.callsService.joinRoom(event.participant.identity, metadata.userAdmin.UID)
+            }
+            else if (event.event == "participant_left") {
+                const metadata = JSON.parse(event.room.metadata) as metadataRoom;
+                this.callsService.leaveRoom(event.participant.identity, metadata.userAdmin.UID)
+                this.callsService.updateState(metadata.userAdmin.UID);
+                try {
+                    if (event.participant.identity == metadata.userAdmin.UID) {
+                        this.deleteRoom(event.room.name);
+                    }
+                    else if ((await this.listParticipants(event.room.name)).length == 1) {
+                        this.deleteRoom(event.room.name);
+                    }
+                } catch { }
+            }
 
+        } catch (e) {
+            console.log("HOOK", e)
+        }
     }
 
 
@@ -131,7 +146,9 @@ export class RoomService {
         return await this.roomModel.find({}).exec()
     }
     async deleteRoom(roomName: string) {
-        await this.roomProvider.deleteRoom(roomName);
+        try {
+            await this.roomProvider.deleteRoom(roomName);
+        } catch { }
         return { "message": "Room deleted successfully" }
     }
 
@@ -170,13 +187,16 @@ export class RoomService {
     }
 
 
-    async leaveRoom(roomName: string, userId: string) {
-        //await this.callsService.leaveRoom(userId);
+    async leaveRoom(roomName: string, uid: string) {
+        const meta = await this.getMetadataRoomName(roomName);
+        if (!meta)
+            throw new UnauthorizedException("not found room");
+        await this.callsService.leaveRoom(uid, meta.userAdmin.UID);
     }
 
 
     async addUserToRoom(roomName: string, userIdadd: string, userUID: string) {
-        console.log(roomName, userIdadd, userUID)
+
         const metadata = await this.getMetadataRoomName(roomName);
         if (metadata == null)
             throw new UnauthorizedException("No found room");
@@ -184,6 +204,7 @@ export class RoomService {
             metadata.acceptUsers.push(userIdadd);
         if (await this.setMetadataRoomName(roomName, metadata) == null)
             throw new UnauthorizedException("Not set metadata");
+        console.log(roomName, userIdadd, userUID)
         this.callsService.sendCallUser(userIdadd, userUID, roomName);
         return metadata;
     }

@@ -74,21 +74,21 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //        console.log(e);
     //    }
     //}
-    @UseGuards(JwtAuthGuard)
-    @SubscribeMessage('leave_room')
-    async handleLeaveRoom(client: Socket, payload) {
-        try {
-
-            const user = await this.authService.getMeWS(client)
-            if (!user)
-                throw new UnauthorizedException("User not found");
-            await this.callsService.leaveRoom(user.UID);
-            console.log("leave_room", client.id, payload, user);
-
-        } catch (e) {
-            console.log(e);
-        }
-    }
+    //@UseGuards(JwtAuthGuard)
+    //@SubscribeMessage('leave_room')
+    //async handleLeaveRoom(client: Socket, payload) {
+    //    try {
+    //
+    //        const user = await this.authService.getMeWS(client)
+    //        if (!user)
+    //            throw new UnauthorizedException("User not found");
+    //        await this.callsService.leaveRoom(user.UID);
+    //        console.log("leave_room", client.id, payload, user);
+    //
+    //    } catch (e) {
+    //        console.log(e);
+    //    }
+    //}
 
     @UseGuards(JwtAuthGuard)
     @SubscribeMessage('call_state')
@@ -113,7 +113,7 @@ export class CallsGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const user = await this.authService.getMeWS(client)
             if (!user)
                 throw new UnauthorizedException("User not found");
-            await this.callsService.leaveRoom(user.UID);
+            // await this.callsService.leaveRoom(user.UID);
 
         } catch (e) {
             console.log(e);

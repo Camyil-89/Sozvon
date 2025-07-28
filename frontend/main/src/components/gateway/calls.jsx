@@ -45,69 +45,69 @@ const Calls = () => {
     }, [lastState]);
 
     useEffect(() => {
-        console.log("Start WS");
+        console.log("Инициализация WebSocket");
 
-        // Создаем сокет один раз
         const newSocket = io(SOCKET_URL, {
             transports: ['websocket'],
-            reconnection: true,           // Включаем автоматическое переподключение
-            reconnectionAttempts: Infinity, // Бесконечные попытки переподключения
-            reconnectionDelay: 1000,       // Задержка между попытками
-            reconnectionDelayMax: 5000,    // Максимальная задержка
-            randomizationFactor: 0.5,      // Фактор рандомизации
-            timeout: 3000,                // Таймаут подключения
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            randomizationFactor: 0.5,
+            timeout: 3000,
         });
 
         setSocket(newSocket);
 
-        newSocket.on("call_state", async (data) => {
+        newSocket.on("call_state", (data) => {
             setlastState(data);
         });
 
         newSocket.on('connect', () => {
-            console.log('Connected with ID:', newSocket.id);
+            console.log('Подключён с ID:', newSocket.id);
             newSocket.emit('call_state');
         });
 
         newSocket.on('disconnect', (reason) => {
-            console.log('Disconnected:', reason);
-            // Socket.IO автоматически попытается переподключиться
+            console.log('Отключён:', reason);
         });
 
         newSocket.on('connect_error', (err) => {
-            console.error('Connection error:', err.message);
+            console.error('Ошибка подключения:', err.message);
         });
 
-        // Приходит событие звонка
-        newSocket.on('call', async (data) => {
-            console.log('Incoming call:', data);
+        newSocket.on('call', (data) => {
+            console.log('Входящий звонок:', data);
             setIncomingCall(data);
         });
 
-        // Отмена звонка
         newSocket.on('call_cancel', (data) => {
-            console.log('Call cancelled:', data);
+            console.log('Звонок отменён:', data);
             setIncomingCall(null);
         });
 
-        newSocket.on('call_rejected', (err) => {
-            // Используем newSocket вместо socket, так как socket может быть null
+        newSocket.on('call_rejected', () => {
             newSocket.emit('cancel_call', { callerId: incomingCall?.callerId });
             navigate(`/`);
         });
 
-
-        const loop_fetch = () => {
+        // Периодическая отправка состояния
+        const loopFetch = () => {
             if (newSocket.connected) {
                 newSocket.emit('call_state');
             }
-            setTimeout(() => {
-                loop_fetch();
-            }, 5000);
+            const timer = setTimeout(loopFetch, 5000);
+            return timer;
         };
+        const timerId = loopFetch();
 
-        loop_fetch();
-    }, []); // Пустой массив зависимостей - запуск только при монтировании
+        // Очистка при размонтировании
+        return () => {
+            console.log("Очистка WebSocket");
+            clearTimeout(timerId);
+            newSocket.close(); // Закрываем соединение
+        };
+    }, []);
 
     const handleAccept = () => {
         setIncomingCall(null);

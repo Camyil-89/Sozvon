@@ -22,6 +22,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             error = exception.name;
         }
         console.log(exception, request.url);
+        if (status == 403) {
+            response.clearCookie("jwt");
+        }
         response.status(status).json({
             statusCode: status,
             timestamp: new Date().toISOString(),
@@ -29,5 +32,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
             message,
             error,
         });
+
     }
 }

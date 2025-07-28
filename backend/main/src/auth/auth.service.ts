@@ -63,7 +63,24 @@ export class AuthService implements OnModuleInit {
     }
 
     async getMeWS(client: Socket) {
-        const cookies = cookie.parse(client.client.request.headers.cookie);
+        const cookieHeader = client.client.request.headers.cookie;
+
+        if (!cookieHeader) {
+            throw new UnauthorizedException('No cookie header provided');
+        }
+
+        // If cookie header is an array, join it. If not a string, coerce or throw.
+        const cookieString = Array.isArray(cookieHeader)
+            ? cookieHeader.join('; ')
+            : typeof cookieHeader === 'string'
+                ? cookieHeader
+                : '';
+
+        if (!cookieString) {
+            throw new UnauthorizedException('No cookies found');
+        }
+
+        const cookies = cookie.parse(cookieString);
         return await this._getMe(cookies?.jwt);
     }
 
