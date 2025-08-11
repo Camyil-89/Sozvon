@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import Calls from '../../api/calls';
 import FormCard from '../../components/formCard';
 
+import profile from '../../api/profile'
+
 const FriendPage = () => {
     const [friends, setFriends] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [activeTab, setActiveTab] = useState('friends'); // friends or all
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [callError, setCallError] = useState(null);
     const navigate = useNavigate();
 
     // Fetch friends and all users
@@ -39,6 +42,19 @@ const FriendPage = () => {
     const callUser = async (uid) => {
         try {
             const call = await Calls.callUserByUID(uid);
+            if (!call) {
+                alert("Не удалось совершить вызов. Попробуйте позже.");
+                return;
+            }
+            if (call.messages) {
+                let messages = []
+                for (let message of call.messages) {
+                    messages.push({ ...message, profile: await profile.getProfileByUID(message.UID) })
+                }
+                console.log(messages);
+                setCallError(messages);
+                return;
+            }
             console.log(call);
             navigate(`/room/${call.UID}`)
         } catch (err) {
@@ -178,6 +194,39 @@ const FriendPage = () => {
                 </div>
             </div>
         );
+    }
+    if (callError) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="max-w-md w-full">
+                    <FormCard
+                        title="Звонок не удался"
+                        subtitle="Не удалось  позвонить"
+                        error={error}
+                        icon={
+                            <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        }
+                    >
+                        {callError.map((element, index) => (
+                            <div key={index} className="text-red-600 text-md">
+                                [{element.profile.profile.name}] {element.message}
+                            </div>
+                        ))}
+                        <div className="text-center mt-6">
+
+                            <button
+                                onClick={() => { setCallError(null); }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
+                            >
+                                назад
+                            </button>
+                        </div>
+                    </FormCard>
+                </div>
+            </div>
+        )
     }
 
     if (error) {

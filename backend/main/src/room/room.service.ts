@@ -5,7 +5,7 @@ import { AccessToken, Room, RoomServiceClient, WebhookReceiver } from 'livekit-s
 import { Model } from 'mongoose';
 import { json } from 'stream/consumers';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { CallsService } from 'src/gateway/calls/calls.service';
+import { CallsService, CallsStatus, statusMessages } from 'src/gateway/calls/calls.service';
 import { Response, Request } from 'express';
 import { metadataRoom } from './dto/metadata-room.dto';
 const crypto = require('crypto');
@@ -93,13 +93,27 @@ export class RoomService {
             dto.acceptUsers.push(user.UID);
         }
         await this.createRoomCallLiveKit(uid, user.UID, dto);
-        dto.acceptUsers.forEach(au => {
-            if (au === user.UID) {
-                return;
+        let users: any = [];
+        for (let ac_user of dto.acceptUsers) {
+            console.log(ac_user, user.UID)
+            if (ac_user === user.UID) {
+                continue;
             }
-            this.callsService.sendCallUser(au, user.UID, uid);
-        })
-        return { UID: uid };
+            users.push({ UID: ac_user, status: await this.callsService.sendCallUser(ac_user, user.UID, uid) });
+        }
+        let users_ok = users.filter((user) => user.status == CallsStatus.CallOK);
+        if (users_ok.length > 0)
+            return { UID: uid, users_status: users };
+        else {
+            await this.deleteRoom(uid);
+            let messages: any = []
+            for (let user of users) {
+                if (statusMessages[user.status]) {
+                    messages.push({ message: `${statusMessages[user.status]} (${user.status})`, UID: user.UID });
+                }
+            }
+            return { users_status: users, messages: messages }
+        }
     }
 
     async createRoomCallLiveKit(uid, admin_UID, data: any = null,) {
@@ -112,7 +126,7 @@ export class RoomService {
         let metadata = data != null ? JSON.stringify(combinedObj) : '';
         await this.roomProvider.createRoom({
             name: uid,
-            emptyTimeout: 300, // 1 hour
+            emptyTimeout: 15, // 1 hour
             metadata: metadata
         });
     }
@@ -205,7 +219,7 @@ export class RoomService {
         if (await this.setMetadataRoomName(roomName, metadata) == null)
             throw new UnauthorizedException("Not set metadata");
         console.log(roomName, userIdadd, userUID)
-        this.callsService.sendCallUser(userIdadd, userUID, roomName);
+        console.log(await this.callsService.sendCallUser(userIdadd, userUID, roomName));
         return metadata;
     }
 }

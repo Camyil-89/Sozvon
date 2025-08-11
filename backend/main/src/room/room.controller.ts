@@ -73,10 +73,6 @@ export class RoomController {
 
     @Post('/livekit/webhook')
     async webhook(@Req() req: Request, @Headers('Authorization') authHeader: string) {
-        // Предполагается, что RoomService инжектится через конструктор
-        // constructor(private readonly roomService: RoomService) {}
-
-        // Передаем req и authHeader в сервис
         return this.roomService.webhook(req, authHeader);
     }
 }

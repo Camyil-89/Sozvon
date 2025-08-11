@@ -17,7 +17,7 @@ function Header() {
                         </Link>
                     </div>
                     <div className="hidden md:flex space-x-8">
-                        <Link to="/room" className="hover:text-[#6e9eac] transition">Создать комнату</Link>
+                        {/* <Link to="/room" className="hover:text-[#6e9eac] transition">Создать комнату</Link> */}
                         <Link to="/friend" className="hover:text-[#6e9eac] transition">Друзья</Link>
                     </div>
                     <div className="flex items-center space-x-4">
@@ -37,11 +37,11 @@ function Header() {
                                 Войти
                             </Link>
                         )}
-                        <Link to="/room">
+                        {/* <Link to="/room">
                             <button className="px-4 py-2 bg-[#256e91] rounded-lg hover:bg-[#1e4c61] transition">
                                 Начать встречу
                             </button>
-                        </Link>
+                        </Link> */}
                     </div>
                 </div>
             </div>

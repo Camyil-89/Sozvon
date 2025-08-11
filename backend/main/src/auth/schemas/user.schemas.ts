@@ -96,7 +96,10 @@ UserSchema.pre('save', async function (next) {
             .substring(0, 12);
         try {
             const exists = await model.findOne({ UID: this.UID });
-            if (!exists && this.UID != "" && this.UID != null) isUnique = true;
+            if (!exists && this.UID != "" && this.UID != null) {
+                isUnique = true;
+                break;
+            }
             else
                 this.UID = uid;
         } catch (err) {
