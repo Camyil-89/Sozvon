@@ -228,6 +228,7 @@ export class CallsService {
 
         this.sendWS(userUIDAdmin, "call_state", await this.redisSevice.get(`call_${userUIDAdmin}`));
         this.sendWS(userUID, "call_state", await this.redisSevice.get(`call_${userUID}`));
+        console.log(await this.redisSevice.get(`call_${userUID}`));
     }
 
     async leaveRoom(userUID: string, userUIDAdmin: string) {

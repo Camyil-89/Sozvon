@@ -135,7 +135,7 @@ const Chat = ({ localParticipant }) => {
                             value={message}
                             onChange={handleMessageChange}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="flex-1 px-4 py-2 border border-gray-300 text-black rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             maxLength={255}
                         />
                         <button

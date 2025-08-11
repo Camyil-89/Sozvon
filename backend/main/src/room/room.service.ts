@@ -41,7 +41,6 @@ export class RoomService {
                 return;
             }
             const event = await this.receiver.receive(body, authHeader);
-
             if (event.event == "participant_joined") {
                 const metadata = JSON.parse(event.room.metadata) as metadataRoom;
                 this.callsService.joinRoom(event.participant.identity, metadata.userAdmin.UID)
