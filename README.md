@@ -18,8 +18,10 @@
 
 
 звонок
-<img width="1282" height="1401" alt="image" src="https://github.com/user-attachments/assets/a1659bc7-1bae-48db-b570-054f6dbc7ac0" />
+<img width="2560" height="1400" alt="image" src="https://github.com/user-attachments/assets/181f637f-851d-4f9a-a845-edfb71da062f" />
+
 
 
 стрим экрана
-<img width="1282" height="1401" alt="image" src="https://github.com/user-attachments/assets/9c041a36-0584-4b85-9e94-004626835a0f" />
+<img width="2560" height="1400" alt="image" src="https://github.com/user-attachments/assets/61d8efd0-f792-41fc-967f-5fe53ee52a35" />
+
