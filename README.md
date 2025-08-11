@@ -25,3 +25,5 @@
 стрим экрана
 <img width="2560" height="1400" alt="image" src="https://github.com/user-attachments/assets/61d8efd0-f792-41fc-967f-5fe53ee52a35" />
 
+чат
+<img width="2560" height="1400" alt="image" src="https://github.com/user-attachments/assets/e5fbcbdf-da73-4d3b-b7c8-4205eb8ed517" />
