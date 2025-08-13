@@ -35,7 +35,7 @@ async function bootstrap() {
 	);
 	// Включение CORS с настройками
 	app.enableCors({
-		origin: 'http://localhost:3000', // или массив origin'ов
+		origin: process.env.ORIGIN_FR, // или массив origin'ов
 		methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
 		credentials: true, // если используете куки/авторизацию
 	});

@@ -13,9 +13,12 @@ import { CallsService } from './gateway/calls/calls.service';
 import { CallsModule } from './gateway/calls/calls.module';
 import { RedisModule } from './redis/redis.module';
 import { CallsDatabaseModule } from './database/calls-database.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [AuthModule, AuthDatabaseModule, RoomModule, RoomDatabaseModule, FriendsModule, CallsModule, CallsDatabaseModule],
+  imports: [ConfigModule.forRoot({
+    isGlobal: true, // Делает ConfigModule глобальным
+  }), AuthModule, AuthDatabaseModule, RoomModule, RoomDatabaseModule, FriendsModule, CallsModule, CallsDatabaseModule],
   controllers: [AppController],
   providers: [AppService],
 })
